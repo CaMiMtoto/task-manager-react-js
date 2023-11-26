@@ -20,7 +20,7 @@ Django framework and the Django Rest Framework. The app is deployed on Heroku an
 - Clone the repository using the command below
 
 ```bash
-git clone ...
+git clone https://github.com/CaMiMtoto/task-manager-react-js.git
 ```
 
 - Install dependencies
