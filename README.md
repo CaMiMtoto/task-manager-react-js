@@ -1,9 +1,50 @@
-# React + Vite
+# TASK MANAGEMENT APP
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Description
 
-Currently, two official plugins are available:
+This is a task management app that allows users to create, read, update and delete tasks. The app is built using the
+Django framework and the Django Rest Framework. The app is deployed on Heroku and can be accessed via the link below.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-# task-manager-react-js
+## Features
+
+- Create a task
+- Read a task
+- Update a task
+- Delete a task
+- Mark a task as complete
+- Mark a task as incomplete
+- Assign a task to a user
+
+## Installation
+
+- Clone the repository using the command below
+
+```bash
+git clone ...
+```
+
+- Install dependencies
+
+```bash
+npm install
+```
+
+- Adjust API URL in the `src/configs/httpConfig.js` file
+
+```javascript
+const http = axios.create({
+    baseURL: "http://localhost:3000",
+    headers: {
+        "Content-Type": "application/json"
+    },
+});
+```
+
+- Run the app
+
+```bash
+npm run dev
+```
+
+Go to `http://localhost:3000` to view the app, or the port specified in the terminal.
+
