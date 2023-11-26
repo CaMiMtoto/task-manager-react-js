@@ -3,9 +3,9 @@ import {Spinner} from "react-bootstrap";
 import http from "../configs/httpConfig.js";
 import {Link, useNavigate} from "react-router-dom";
 
-function Login() {
+function Register() {
     const [formData, setFormData] = useState({
-        email: '', password: ''
+        name: '', email: '', phone: '', password: ''
     });
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -18,13 +18,13 @@ function Login() {
     }
     const handleSubmit = (e) => {
         e.preventDefault();
-        console.log('login');
-        http.post('/auth/login', {
+        http.post('/auth/register', {
+            phone: formData.phone,
+            name: formData.name,
             email: formData.email,
             password: formData.password
         })
             .then((response) => {
-                console.log(response);
                 const jwt = response.data.token;
                 localStorage.setItem('token', jwt);
                 localStorage.setItem('user', JSON.stringify({
@@ -32,10 +32,9 @@ function Login() {
                     name: response.data.user.name,
                     email: response.data.user.username
                 }));
-                navigate('/home')
+                navigate('/')
             })
             .catch((error) => {
-                console.log(error);
                 setLoading(false);
                 setError(error.response.data.message ?? 'Something went wrong');
             });
@@ -43,9 +42,11 @@ function Login() {
 
     return (<div className="card card-body py-5 px-4">
         <div className="">
-            <h2>Login</h2>
+            <h2>
+                Register
+            </h2>
             <p>
-                Please fill in your credentials to login
+                Please fill in your credentials to create an account
             </p>
         </div>
 
@@ -54,6 +55,19 @@ function Login() {
         }
 
         <form onSubmit={handleSubmit} autoComplete="off">
+
+            <div className="mb-4">
+                <label htmlFor="name">Name</label>
+                <input type="text" id="name" className="form-control" name="name" onChange={handleChange}
+                       required={true}/>
+            </div>
+
+            <div className="mb-4">
+                <label htmlFor="phone">Phone</label>
+                <input type="text" id="phone" className="form-control" name="phone" onChange={handleChange}
+                       required={true}/>
+            </div>
+
             <div className="mb-4">
                 <label htmlFor="email">Email</label>
                 <input type="email" id="email" className="form-control" name="email" onChange={handleChange}
@@ -66,14 +80,15 @@ function Login() {
             </div>
             <button className="btn btn-primary d-inline-flex justify-content-center align-items-center gap-2 w-100"
                     disabled={loading}>
-                Login
+                Register
                 {loading && <Spinner animation="border" size="sm"/>}
             </button>
+
             <p className="mt-4 text-center">
-                Don't have an account? <Link to={'/auth/register'}>Register</Link>
+                Already have an account? <Link to={'/auth/login'}>Login</Link>
             </p>
         </form>
     </div>);
 }
 
-export default Login;
+export default Register;

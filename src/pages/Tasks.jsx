@@ -1,8 +1,9 @@
-import {Button, Form, Modal} from "react-bootstrap";
+import {Button, Dropdown, Form, Modal, Spinner} from "react-bootstrap";
 import {useEffect, useState} from "react";
 import {FaEdit} from "react-icons/fa";
-import {FaTrash} from "react-icons/fa6";
+import {FaChevronDown, FaTrash, FaUser} from "react-icons/fa6";
 import http from "../configs/httpConfig.js";
+import AppPagination from "../components/Pagination.jsx";
 
 const PRIORITIES = [
     "Low", "Medium", "High"
@@ -10,20 +11,36 @@ const PRIORITIES = [
 const Tasks = () => {
     const [tasks, setTasks] = useState([]);
     const [showModal, setShowModal] = useState(false);
+    const [showAssignModal, setShowAssignModal] = useState(false);
     const [editing, setEditing] = useState(false);
     const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         _id: '',
         title: '',
         description: '',
-        priority: ''
+        priority: '',
+        assignee: ''
     });
+    const [response, setResponse] = useState({});
+    const [assignees, setAssignees] = useState([]);
 
-    const fetchTasks = () => {
-        http.get('/tasks')
+    const fetchAssignees = () => {
+        http.get('/users')
             .then((response) => {
                 console.log(response);
-                setTasks(response.data);
+                setAssignees(response.data.results);
+            })
+            .catch((error) => {
+                console.log(error);
+            });
+    }
+
+    const fetchTasks = (url = '/tasks') => {
+        http.get(url)
+            .then((response) => {
+                console.log(response);
+                setTasks(response.data.results);
+                setResponse(response.data);
             })
             .catch((error) => {
                 console.log(error);
@@ -31,6 +48,7 @@ const Tasks = () => {
     }
 
     useEffect(() => {
+        fetchAssignees();
         fetchTasks();
     }, []);
 
@@ -42,14 +60,25 @@ const Tasks = () => {
     }
 
     const toggleTask = (id) => {
-        console.log(id)
-        // find the task with the id
-        let task = tasks.find((task) => task._id === id);
-        // toggle the completed property
-        task.completed = !task.completed;
-        // update the state
-        setTasks([...tasks]);
+        setLoading(true)
+        http.patch(`/tasks/${id}/toggle-completed`)
+            .then((response) => {
+                // update the state
+                setTasks(tasks.map((task) => {
+                    if (task._id === id) {
+                        return response.data;
+                    }
+                    return task;
+                }));
+            })
+            .catch((error) => {
+                console.log(error);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
     }
+
 
     function updateTask() {
         http.put(`/tasks/${formData._id}`, {
@@ -83,7 +112,8 @@ const Tasks = () => {
             _id: '',
             title: '',
             description: '',
-            priority: ''
+            priority: '',
+            assignee: ''
         });
         // close the modal
         setShowModal(false);
@@ -146,7 +176,7 @@ const Tasks = () => {
             });
     }
 
-    const  getTaskColor = (priority) => {
+    const getTaskColor = (priority) => {
         switch (priority) {
             case 'Low':
                 return 'success';
@@ -157,6 +187,24 @@ const Tasks = () => {
             default:
                 return 'secondary';
         }
+    }
+
+    const handleAssign = (e) => {
+        e.preventDefault();
+        setLoading(true);
+        http.patch(`/tasks/${formData._id}/assign`, {
+            assignedTo: formData.assignee
+        })
+            .then(() => {
+                resetFormData();
+                setShowAssignModal(false);
+            })
+            .catch((error) => {
+                console.log(error);
+            })
+            .finally(() => {
+                setLoading(false);
+            });
     }
 
     return (
@@ -170,59 +218,98 @@ const Tasks = () => {
                 </Button>
             </div>
 
-            <div className="list-group">
-                {tasks.map((task) => (
-                    <div className="list-group-item list-group-item-action" key={task._id}>
-                        <div className="d-flex  w-100 justify-content-between">
-                            <div className="mb-1">
+            {
+                tasks.length > 0 &&
+                <div>
+                    <div className="list-group list-group-flush">
+                        {tasks.map((task) => (
+                            <div
+                                className={`list-group-item border-0 mb-2  border-start border-4 ps-2 border-${getTaskColor(task.priority)}`}
+                                key={task._id}>
+
+
                                 <div className="form-check">
-                                    <input className="form-check-input" type="checkbox"
-                                           checked={task.completed} onChange={() => toggleTask(task._id)}
-                                           value={task._id} id={`flexCheckDefault${task._id}`}/>
+                                    <input className="form-check-input" type="checkbox" value={task._id}
+                                           checked={task.completed}
+                                           onChange={() => toggleTask(task._id)}
+                                           id={`flexCheckDefault${task._id}`}/>
                                     <label
-                                        className={`form-check-label fw-bold ${task.completed ? 'text-decoration-line-through' : ''}`}
-                                        htmlFor={`flexCheckDefault${task._id}`}>
+                                        htmlFor={`flexCheckDefault${task._id}`}
+                                        className={`form-check-label fw-bold ${task.completed ? 'text-decoration-line-through' : ''}`}>
                                         {task.title}
+                                        {loading && <Spinner variant="primary" className="ms-2" size="sm"/>}
                                     </label>
                                 </div>
-                            </div>
-                        </div>
-                        <p className={`mb-1 border-start border-4 ps-2 border-${getTaskColor(task.priority)}`}>
-                            {task.description}
-                        </p>
 
-                        <div className="d-flex align-items-center gap-2 justify-content-between">
-                            <div>
+                                <div className="ms-4">
+                                    <p className={`mb-1 small border-4 `}>
+                                        {task.description}
+                                    </p>
+
+                                    <div className="d-flex align-items-center gap-2 justify-content-between">
+                                        <div>
                                     <span
                                         className={`badge rounded-pill small ${task.completed ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'}`}>
-                                {task.completed ? 'Completed' : 'Not Completed'}
-                            </span>
-                            </div>
-                            <div className="d-flex justify-content-end  gap-2">
-                                <Button variant="primary" size="sm"
-                                        className="bg-primary-subtle text-primary border-0 rounded-pill d-inline-flex justify-content-center align-items-center p-2"
-                                        onClick={() => handleEdit(task._id)}>
-                                    <FaEdit/>
-                                </Button>
-                                <Button variant="danger" size="sm"
-                                        className="bg-danger-subtle text-danger border-0 rounded-pill d-inline-flex justify-content-center align-items-center p-2"
-                                        onClick={() => handleDelete(task._id)}>
-                                    <FaTrash/>
-                                </Button>
-                            </div>
+                                {task.completed ? 'Completed' : 'Not Completed'}</span>
+                                        </div>
+                                        <div className="d-flex justify-content-end  gap-2">
 
-                        </div>
+
+                                            <Dropdown>
+                                                <Dropdown.Toggle variant="light" id="dropdown-basic">
+                                                    More
+                                                </Dropdown.Toggle>
+
+                                                <Dropdown.Menu>
+                                                    <Dropdown.Item href="#/action-1"
+                                                                   onClick={() => {
+                                                                       setShowAssignModal(true);
+                                                                       setFormData({
+                                                                           ...formData,
+                                                                           _id: task._id
+                                                                       });
+                                                                   }}>
+                                                        <FaUser className="me-2"/>
+                                                        Assign
+                                                    </Dropdown.Item>
+                                                    <Dropdown.Item href="#/action-2"
+                                                                   onClick={() => handleEdit(task._id)}>
+                                                        <FaEdit className="me-2"/> Edit
+                                                    </Dropdown.Item>
+                                                    <Dropdown.Item href="#/action-3"
+                                                                   onClick={() => handleDelete(task._id)}>
+                                                        <FaTrash className="me-2"/> Delete
+                                                    </Dropdown.Item>
+                                                </Dropdown.Menu>
+                                            </Dropdown>
+
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
-                ))}
-            </div>
+
+                    <div className="my-3">
+                        <AppPagination currentPage={response.page} handlePageChange={fetchTasks}
+                                       prevPage={response.prevPage}
+                                       nextPage={response.nextPage}/>
+                    </div>
+                </div>
+            }
+            {
+                tasks.length === 0 &&
+                <div className="alert alert-info">
+                    No tasks found , please add a task to get started
+                </div>
+            }
 
             <Modal
-                size="lg"
                 aria-labelledby="contained-modal-title-vcenter"
                 centered
                 show={showModal}
-                contentClassName="rounded-1"
-            >
+                contentClassName="rounded-1">
                 <Modal.Header closeButton>
                     <Modal.Title id="contained-modal-title-vcenter">
                         Add Task
@@ -244,7 +331,8 @@ const Tasks = () => {
                         </div>
                         <div className="mb-3">
                             <label htmlFor="priority" className="form-label">Priority</label>
-                            <select className="form-select" id="priority" name="priority" required={true} value={formData.priority}
+                            <select className="form-select" id="priority" name="priority" required={true}
+                                    value={formData.priority}
                                     onChange={handleChange}>
                                 <option value="">Select Priority</option>
                                 {PRIORITIES.map((priority) => (
@@ -264,6 +352,50 @@ const Tasks = () => {
                         </Button>
                         <Button type="button"
                                 onClick={() => setShowModal(false)}
+                                variant="secondary">Close</Button>
+                    </Modal.Footer>
+                </Form>
+            </Modal>
+
+            {/*modal for assign task*/}
+
+            <Modal
+                aria-labelledby="contained-modal-title-vcenter"
+                centered
+                show={showAssignModal}
+                contentClassName="rounded-1">
+                <Modal.Header closeButton>
+                    <Modal.Title id="contained-modal-title-vcenter">
+                        Assign Task
+                    </Modal.Title>
+                </Modal.Header>
+                <Form onSubmit={handleAssign}>
+                    <Modal.Body>
+
+                        {/*select user to assign task*/}
+                        <div className="mb-3">
+                            <label htmlFor="assignee" className="form-label">Assignee</label>
+                            <select className="form-select" id="assignee" name="assignee" required={true}
+                                    value={formData.assignee}
+                                    onChange={handleChange}>
+                                <option value="">Select Assignee</option>
+                                {assignees.map((assignee) => (
+                                    <option key={assignee._id} value={assignee._id}>{assignee.name}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                    </Modal.Body>
+                    <Modal.Footer className="bg-light">
+                        <Button type="submit" variant="primary" disabled={loading}>Save changes
+                            {
+                                loading && <div className="spinner-border spinner-border-sm ms-2" role="status">
+                                    <span className="visually-hidden">Loading...</span>
+                                </div>
+                            }
+                        </Button>
+                        <Button type="button"
+                                onClick={() => setShowAssignModal(false)}
                                 variant="secondary">Close</Button>
                     </Modal.Footer>
                 </Form>

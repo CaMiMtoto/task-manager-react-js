@@ -6,6 +6,7 @@ import Tasks from "./pages/Tasks.jsx";
 import AuthLayout from "./layouts/AuthLayout.jsx";
 import Login from "./pages/Login.jsx";
 import Home from "./pages/Home.jsx";
+import Register from "./pages/Register.jsx";
 
 function App() {
 
@@ -13,13 +14,13 @@ function App() {
         <BrowserRouter>
             <Routes>
                 <Route path="/" element={<AppLayout/>}>
-                    <Route index path="home" element={<Home/>}/>
+                    <Route index path="" element={<Home/>}/>
                     <Route path="tasks" element={<Tasks/>}/>
                     <Route path="about" element={<h1>About</h1>}/>
                 </Route>
                 <Route path="/auth" element={<AuthLayout/>}>
                     <Route path="login" element={<Login/>}/>
-                    <Route path="register" element={<h1>Register</h1>}/>
+                    <Route path="register" element={<Register/>}/>
                 </Route>
                 <Route path="*" element={<NotFound/>}/>
             </Routes>
