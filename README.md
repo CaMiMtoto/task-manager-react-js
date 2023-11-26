@@ -2,8 +2,7 @@
 
 ## Description
 
-This is a task management app that allows users to create, read, update and delete tasks. The app is built using the
-Django framework and the Django Rest Framework. The app is deployed on Heroku and can be accessed via the link below.
+This is a task management app that allows users to create, read, update and delete tasks. The app is built using the react js.
 
 ## Features
 
